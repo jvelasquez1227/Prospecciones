@@ -3,21 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe de Power BI</title>
+    <title>Gestión de Usuarios y Reporte</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        iframe {
-            width: 100%;
-            height: 600px; /* Ajusta la altura según sea necesario */
-            border: none;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; overflow: hidden; }
+        .container { width: 300px; margin: 20px; position: absolute; left: 20px; top: 20px; z-index: 10; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 8px; }
+        .input-group { margin: 10px 0; }
+        #report { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
-	Dashboard de Avance Prospección
+    <div class="container" id="userContainer">
+        <h2>Registro de Usuarios</h2>
+        <form id="registerForm">
+            <div class="input-group">
+                <label for="newUsername">Nuevo Usuario:</label>
+                <input type="text" id="newUsername" required>
+            </div>
+            <div class="input-group">
+                <label for="newPassword">Contraseña:</label>
+                <input type="password" id="newPassword" required>
+            </div>
+            <button type="submit">Registrar</button>
+        </form>
+
+        <h2>Iniciar Sesión</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">Entrar</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <div id="report">
+        <h2>Reporte</h2>
+        <iframe title="Prospecciones3.0" src="https://app.powerbi.com/reportEmbed?reportId=cb4eb95a-abdf-4001-8ec6-5c0474a5f3db&autoAuth=true&ctid=ad65ca78-3efa-4b4f-8fdc-321e7a5067d2" allowFullScreen="true"></iframe>
+    </div>
+
+    <div id="accessLogContainer" style="display: none;">
+        <h2>Registro de Accesos</h2>
+        <ul id="accessLogList"></ul>
+    </div>
+
+    <script>
+        const users = {}; // Objeto para almacenar usuarios
+
+        // Cargar usuarios desde localStorage
+        window.onload = function() {
+            const storedUsers = JSON.parse(localStorage.getItem('users')) || {};
+            Object.assign(users, storedUsers);
+
+            const accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
+            const accessLogList = document.getElementById('accessLogList');
+            accessLogList.innerHTML = ""; // Limpiar la lista antes de mostrar
+
+            accessLog.forEach(entry => {
+                const li = document.createElement('li');
+                li.textContent = `${entry.user} - ${new Date(entry.time).toLocaleString()}`;
+                accessLogList.appendChild(li);
+            });
+
+            if (accessLog.length > 0) {
+                document.getElementById('accessLogContainer').style.display = 'block'; // Mostrar registro si hay accesos
+            }
+        };
+
+        // Función para registrar nuevos usuarios
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const newUsername = document.getElementById('newUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            // Comprobar si el usuario ya existe
+            if (users[newUsername]) {
+                alert("El usuario ya existe.");
+            } else {
+                // Agregar nuevo usuario
+                users[newUsername] = newPassword;
+                localStorage.setItem('users', JSON.stringify(users)); // Guardar usuarios en localStorage
+                alert("Usuario registrado con éxito.");
+                document.getElementById('registerForm').reset();
+            }
+        });
+
+        // Función para iniciar sesión
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Comprobar credenciales
+            if (users[username] && users[username] === password) {
+                document.getElementById('message').innerText = "¡Bienvenido!";
+                const accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
+                accessLog.push({ user: username, time: new Date() });
+                localStorage.setItem('accessLog', JSON.stringify(accessLog)); // Guardar en local storage
+
+                console.log(accessLog); // Mostrar registro de accesos en la consola
+                document.getElementById('userContainer').style.display = 'none';
+                document.getElementById('report').style.display = 'block';
+            } else {
+                document.getElementById('message').innerText = "Usuario o contraseña incorrectos.";
+            }
+        });
+    </script>
 </body>
 </html>
